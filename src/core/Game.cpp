@@ -6,8 +6,13 @@
 #include <iostream>
 #include <ostream>
 #include <thread>
+#include <vector>
 
-Game::Game() : running(false) {}
+Game::Game() : running(false) {
+  // Crear menu principal
+  std::vector<std::string> options = {"Nuevo Juego", "Cargar Partida", "Salir"};
+  mainMenu = std::make_unique<Menu>("THE INFINITE SPIRE", options);
+}
 
 Game::~Game() { cleanup(); }
 
@@ -55,17 +60,35 @@ void Game::run() {
 
 void Game::processInput() {
   Key key = Input::getInstance().getKeyPress();
+  State current = gameState.getState();
 
-  if (key == Key::ESC && gameState.getState() != State::MAIN_MENU) {
-    if (gameState.getState() == State::PAUSE) {
+  // Input para menu principal
+  if (current == State::MAIN_MENU) {
+    if (key == Key::UP || key == Key::W) {
+      mainMenu->moveUp();
+    } else if (key == Key::DOWN || key == Key::S) {
+      mainMenu->moveDown();
+    } else if (key == Key::ENTER || key == Key::SPACE) {
+      int selected = mainMenu->getSelectedIndex();
+      if (selected == 0) { // Nuevo Juego
+        gameState.setState(State::TOWER);
+      } else if (selected == 1) { // Cargar Partida
+        // TODO: implementar carga
+        gameState.setState(State::TOWER);
+      } else if (selected == 2) { // Salir
+        quit();
+      }
+    }
+    return;
+  }
+
+  // Input general para otros estados
+  if (key == Key::ESC && current != State::MAIN_MENU) {
+    if (current == State::PAUSE) {
       gameState.returnToPreviousState();
     } else {
       gameState.setState(State::PAUSE);
     }
-  }
-
-  if (key == Key::Q && gameState.getState() == State::MAIN_MENU) {
-    quit();
   }
 }
 
@@ -98,56 +121,69 @@ void Game::update(float deltaTime) {
 
 void Game::render() {
   Renderer& renderer = Renderer::getInstance();
+  renderer.clear();
+  
   State current = gameState.getState();
   
-  int centerY = renderer.getHeight() / 2;
-  int boxWidth = 50;
-  int boxHeight = 10;
-  int boxX = (renderer.getWidth() - boxWidth) / 2;
-  int boxY = centerY - boxHeight / 2;
-  
-  // Dibujar caja principal
-  renderer.drawBox(boxX, boxY, boxWidth, boxHeight, Color::BRIGHT_CYAN);
-  
-  // Título centrado
-  renderer.drawCentered(boxY + 2, "THE INFINITE SPIRE", Color::BRIGHT_CYAN);
-  
-  // Línea separadora
-  renderer.drawHLine(boxX + 2, boxY + 3, boxWidth - 4, '=', Color::CYAN);
-  
-  // Estado actual
+  // Renderizar según estado
   switch (current) {
     case State::MAIN_MENU:
-      renderer.drawCentered(boxY + 5, "MENU PRINCIPAL", Color::YELLOW);
-      renderer.drawCentered(boxY + 7, "[Q] Salir", Color::WHITE);
+      mainMenu->render();
+      renderer.drawString(2, renderer.getHeight() - 2, 
+                         "Controles: W/S=Navegar ENTER/SPACE=Seleccionar", 
+                         Color::BRIGHT_BLACK);
       break;
-    case State::PAUSE:
-      renderer.drawCentered(boxY + 5, "PAUSA", Color::YELLOW);
-      renderer.drawCentered(boxY + 7, "[ESC] Volver", Color::WHITE);
+      
+    case State::PAUSE: {
+      int centerY = renderer.getHeight() / 2;
+      int boxWidth = 50;
+      int boxHeight = 10;
+      int boxX = (renderer.getWidth() - boxWidth) / 2;
+      int boxY = centerY - boxHeight / 2;
+      
+      renderer.drawBox(boxX, boxY, boxWidth, boxHeight, Color::YELLOW);
+      renderer.drawCentered(boxY + 2, "PAUSA", Color::YELLOW + Color::BOLD);
+      renderer.drawCentered(boxY + 5, "[ESC] Volver al juego", Color::WHITE);
       break;
-    case State::TOWER:
-      renderer.drawCentered(boxY + 5, "TORRE", Color::GREEN);
+    }
+      
+    case State::TOWER: {
+      int centerY = renderer.getHeight() / 2;
+      int boxWidth = 50;
+      int boxHeight = 10;
+      int boxX = (renderer.getWidth() - boxWidth) / 2;
+      int boxY = centerY - boxHeight / 2;
+      
+      renderer.drawBox(boxX, boxY, boxWidth, boxHeight, Color::GREEN);
+      renderer.drawCentered(boxY + 2, "LA TORRE", Color::GREEN + Color::BOLD);
+      renderer.drawCentered(boxY + 5, "Piso: 1", Color::WHITE);
       renderer.drawCentered(boxY + 7, "[ESC] Pausa", Color::WHITE);
       break;
-    case State::HUB:
-      renderer.drawCentered(boxY + 5, "HUB", Color::MAGENTA);
+    }
+      
+    case State::HUB: {
+      int centerY = renderer.getHeight() / 2;
+      int boxWidth = 50;
+      int boxHeight = 10;
+      int boxX = (renderer.getWidth() - boxWidth) / 2;
+      int boxY = centerY - boxHeight / 2;
+      
+      renderer.drawBox(boxX, boxY, boxWidth, boxHeight, Color::MAGENTA);
+      renderer.drawCentered(boxY + 2, "HUB - CAMPAMENTO", Color::MAGENTA + Color::BOLD);
+      renderer.drawCentered(boxY + 5, "Area segura", Color::WHITE);
       renderer.drawCentered(boxY + 7, "[ESC] Pausa", Color::WHITE);
       break;
+    }
+      
     default:
-      renderer.drawCentered(boxY + 5, "...", Color::WHITE);
       break;
   }
-  
-  // Footer con info
-  renderer.drawString(2, renderer.getHeight() - 2, 
-                     "FPS: 60 | Controles: ESC=Pausa Q=Salir", 
-                     Color::BRIGHT_BLACK);
   
   renderer.present();
 }
 
 void Game::handleMainMenu() {
-  // ToDo implementar menu principal completo
+  // El menu se maneja en processInput y render
 }
 
 void Game::handleTower() {
