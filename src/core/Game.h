@@ -1,10 +1,10 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include "../ui/Menu.h"
+#include "../ui/Renderer.h"
 #include "../utils/Input.h"
 #include "../utils/Random.h"
-#include "../ui/Renderer.h"
-#include "../ui/Menu.h"
 #include "GameState.h"
 #include <chrono>
 #include <memory>
@@ -19,9 +19,10 @@ private:
   static const int FRAME_DELAY = 1000 / TARGET_FPS; // ms pro frame
 
   std::chrono::steady_clock::time_point lastFrameTime;
-  
+
   // Menu principal
   std::unique_ptr<Menu> mainMenu;
+  std::unique_ptr<Menu> pauseMenu;
 
   // metodos internos
   void processInput();
