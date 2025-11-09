@@ -15,16 +15,11 @@ bool Game::initialize() {
   // inicializar sistema de random con semilla de fecha
   Random::getInstance().setSeedFromDate();
 
+  // inicializar renderer
+  Renderer::getInstance().initialize();
+
   // inicializar input en modo raw+
   Input::getInstance().enableRawMode();
-
-  // limpiar pantalla
-  system("clear");
-
-  std::cout << Color::BRIGHT_CYAN
-            << "=== THE INFINITE SPIRE ===" << Color::RESET << std::endl;
-
-  std::cout << Color::YELLOW << "inicializando..." << Color::RESET << std::endl;
 
   running = true;
   lastFrameTime = std::chrono::steady_clock::now();
@@ -102,37 +97,53 @@ void Game::update(float deltaTime) {
 }
 
 void Game::render() {
-  // Mover cursor al inicio
-  std::cout << "\033[H";
-  
+  Renderer& renderer = Renderer::getInstance();
   State current = gameState.getState();
   
-  // Header
-  std::cout << Color::BRIGHT_CYAN << "=== THE INFINITE SPIRE ===" 
-            << Color::RESET << std::endl;
-  std::cout << Color::YELLOW << "Estado: ";
+  int centerY = renderer.getHeight() / 2;
+  int boxWidth = 50;
+  int boxHeight = 10;
+  int boxX = (renderer.getWidth() - boxWidth) / 2;
+  int boxY = centerY - boxHeight / 2;
   
+  // Dibujar caja principal
+  renderer.drawBox(boxX, boxY, boxWidth, boxHeight, Color::BRIGHT_CYAN);
+  
+  // Título centrado
+  renderer.drawCentered(boxY + 2, "THE INFINITE SPIRE", Color::BRIGHT_CYAN);
+  
+  // Línea separadora
+  renderer.drawHLine(boxX + 2, boxY + 3, boxWidth - 4, '=', Color::CYAN);
+  
+  // Estado actual
   switch (current) {
     case State::MAIN_MENU:
-      std::cout << "MENU PRINCIPAL" << Color::RESET << std::endl;
-      std::cout << "\n[Q] Salir" << std::endl;
+      renderer.drawCentered(boxY + 5, "MENU PRINCIPAL", Color::YELLOW);
+      renderer.drawCentered(boxY + 7, "[Q] Salir", Color::WHITE);
       break;
     case State::PAUSE:
-      std::cout << "PAUSA" << Color::RESET << std::endl;
-      std::cout << "\n[ESC] Volver" << std::endl;
+      renderer.drawCentered(boxY + 5, "PAUSA", Color::YELLOW);
+      renderer.drawCentered(boxY + 7, "[ESC] Volver", Color::WHITE);
       break;
     case State::TOWER:
-      std::cout << "TORRE" << Color::RESET << std::endl;
+      renderer.drawCentered(boxY + 5, "TORRE", Color::GREEN);
+      renderer.drawCentered(boxY + 7, "[ESC] Pausa", Color::WHITE);
       break;
     case State::HUB:
-      std::cout << "HUB" << Color::RESET << std::endl;
+      renderer.drawCentered(boxY + 5, "HUB", Color::MAGENTA);
+      renderer.drawCentered(boxY + 7, "[ESC] Pausa", Color::WHITE);
       break;
     default:
-      std::cout << "..." << Color::RESET << std::endl;
+      renderer.drawCentered(boxY + 5, "...", Color::WHITE);
       break;
   }
   
-  std::cout << std::flush;
+  // Footer con info
+  renderer.drawString(2, renderer.getHeight() - 2, 
+                     "FPS: 60 | Controles: ESC=Pausa Q=Salir", 
+                     Color::BRIGHT_BLACK);
+  
+  renderer.present();
 }
 
 void Game::handleMainMenu() {
@@ -156,6 +167,7 @@ void Game::handlePause() {
 }
 
 void Game::cleanup() {
+  Renderer::getInstance().showCursor();
   Input::getInstance().disableRawMode();
   system("clear");
   std::cout << Color::BRIGHT_MAGENTA << "Gracias por jugar" << Color::RESET

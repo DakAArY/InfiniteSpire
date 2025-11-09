@@ -3,6 +3,7 @@
 
 #include "../utils/Input.h"
 #include "../utils/Random.h"
+#include "../ui/Renderer.h"
 #include "GameState.h"
 #include <chrono>
 
