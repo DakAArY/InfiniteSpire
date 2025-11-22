@@ -18,6 +18,9 @@ Game::Game() : running(false) {
   std::vector<std::string> pauseOptions = {"Reanudar",
                                            "Salir al Menu principal"};
   pauseMenu = std::make_unique<Menu>("PAUSA", pauseOptions);
+
+  // crear UI Manager
+  uiManager = std::make_unique<UIManager>();
 }
 
 Game::~Game() { cleanup(); }
@@ -67,6 +70,30 @@ void Game::run() {
 void Game::processInput() {
   Key key = Input::getInstance().getKeyPress();
   State current = gameState.getState();
+
+  // Toggle consola de debug con tecla ~
+  if (key == Key::TILDE && current != State::MAIN_MENU) {
+    uiManager->toggleConsole();
+    return;
+  }
+
+  // Si la consola está activa, manejar input de consola
+  if (uiManager->isConsoleActive()) {
+    if (key == Key::ENTER) {
+      uiManager->submitConsoleCommand();
+    } else if (key == Key::BACKSPACE) {
+      uiManager->removeConsoleInput();
+    } else if (key == Key::UP) {
+      uiManager->navigateHistory(true);
+    } else if (key == Key::DOWN) {
+      uiManager->navigateHistory(false);
+    } else if (key == Key::ESC) {
+      uiManager->toggleConsole();
+    } else if (key >= Key::CHAR_START && key <= Key::CHAR_END) {
+      uiManager->addConsoleInput((char)key);
+    }
+    return;
+  }
 
   // Input para menu principal
   if (current == State::MAIN_MENU) {
@@ -182,6 +209,9 @@ void Game::render() {
   }
 
   case State::TOWER: {
+    // Renderizar HUD
+    uiManager->renderHUD();
+
     int centerY = renderer.getHeight() / 2;
     int boxWidth = 50;
     int boxHeight = 10;
@@ -191,11 +221,17 @@ void Game::render() {
     renderer.drawBox(boxX, boxY, boxWidth, boxHeight, Color::GREEN);
     renderer.drawCentered(boxY + 2, "LA TORRE", Color::GREEN + Color::BOLD);
     renderer.drawCentered(boxY + 5, "Piso: 1", Color::WHITE);
-    renderer.drawCentered(boxY + 7, "[ESC] Pausa", Color::WHITE);
+    renderer.drawCentered(boxY + 7, "[ESC] Pausa | [~] Debug Console", Color::WHITE);
+
+    // Renderizar consola si está activa
+    uiManager->renderConsole();
     break;
   }
 
   case State::HUB: {
+    // Renderizar HUD
+    uiManager->renderHUD();
+
     int centerY = renderer.getHeight() / 2;
     int boxWidth = 50;
     int boxHeight = 10;
@@ -206,7 +242,10 @@ void Game::render() {
     renderer.drawCentered(boxY + 2, "HUB - CAMPAMENTO",
                           Color::MAGENTA + Color::BOLD);
     renderer.drawCentered(boxY + 5, "Area segura", Color::WHITE);
-    renderer.drawCentered(boxY + 7, "[ESC] Pausa", Color::WHITE);
+    renderer.drawCentered(boxY + 7, "[ESC] Pausa | [~] Debug Console", Color::WHITE);
+
+    // Renderizar consola si está activa
+    uiManager->renderConsole();
     break;
   }
 
@@ -222,7 +261,11 @@ void Game::handleMainMenu() {
 }
 
 void Game::handleTower() {
-  // ToDo implementar logica de torre
+  // Simular cambios de stats para pruebas (puedes comentar esto después)
+  static float testTime = 0.0f;
+  testTime += 0.001f;
+  if (testTime > 1.0f) testTime = 0.0f;
+  uiManager->setDayNightTime(testTime);
 }
 
 void Game::handleHub() {

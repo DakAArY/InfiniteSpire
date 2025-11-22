@@ -3,6 +3,7 @@
 
 #include "../ui/Menu.h"
 #include "../ui/Renderer.h"
+#include "../ui/UIManager.h"
 #include "../utils/Input.h"
 #include "../utils/Random.h"
 #include "GameState.h"
@@ -23,6 +24,9 @@ private:
   // Menu principal
   std::unique_ptr<Menu> mainMenu;
   std::unique_ptr<Menu> pauseMenu;
+
+  // UI Manager
+  std::unique_ptr<UIManager> uiManager;
 
   // metodos internos
   void processInput();
