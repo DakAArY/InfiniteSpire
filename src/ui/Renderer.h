@@ -12,6 +12,8 @@ private:
   int height;
   std::vector<std::vector<char>> buffer;
   std::vector<std::vector<std::string>> colorBuffer;
+  std::vector<std::vector<char>> previousBuffer;
+  std::vector<std::vector<std::string>> previousColorBuffer;
 
   Renderer();
 

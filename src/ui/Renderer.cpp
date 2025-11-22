@@ -27,6 +27,7 @@ void Renderer::initialize() {
   height = w.ws_row;
 
   initBuffers();
+  std::cout << "\033[2J\033[H" << std::flush;
   hideCursor();
   clear();
 }
@@ -34,6 +35,8 @@ void Renderer::initialize() {
 void Renderer::initBuffers() {
   buffer.resize(height, std::vector<char>(width, ' '));
   colorBuffer.resize(height, std::vector<std::string>(width, ""));
+  previousBuffer.resize(height, std::vector<char>(width, '\0'));
+  previousColorBuffer.resize(height, std::vector<std::string>(width, ""));
 }
 
 void Renderer::clearBuffers() {
@@ -46,7 +49,6 @@ void Renderer::clearBuffers() {
 }
 
 void Renderer::clear() {
-  std::cout << "\033[2J\033[H" << std::flush;
   clearBuffers();
 }
 
@@ -107,20 +109,21 @@ void Renderer::drawCentered(int y, const std::string &str,
 }
 
 void Renderer::present() {
-  moveCursor(0, 0);
-
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
-      if (!colorBuffer[y][x].empty()) {
-        std::cout << colorBuffer[y][x];
+      if (buffer[y][x] != previousBuffer[y][x] || 
+          colorBuffer[y][x] != previousColorBuffer[y][x]) {
+        moveCursor(x, y);
+        if (!colorBuffer[y][x].empty()) {
+          std::cout << colorBuffer[y][x];
+        }
+        std::cout << buffer[y][x];
+        if (!colorBuffer[y][x].empty()) {
+          std::cout << Color::RESET;
+        }
+        previousBuffer[y][x] = buffer[y][x];
+        previousColorBuffer[y][x] = colorBuffer[y][x];
       }
-      std::cout << buffer[y][x];
-      if (!colorBuffer[y][x].empty()) {
-        std::cout << Color::RESET;
-      }
-    }
-    if (y < height - 1) {
-      std::cout << '\n';
     }
   }
   std::cout << std::flush;
@@ -130,7 +133,7 @@ int Renderer::getWidth() const { return width; }
 
 int Renderer::getHeight() const { return height; }
 
-void Renderer::hideCursor() { std::cout << "\033[?251" << std::flush; }
+void Renderer::hideCursor() { std::cout << "\033[?25l" << std::flush; }
 
 void Renderer::showCursor() { std::cout << "\033[?25h" << std::flush; }
 
